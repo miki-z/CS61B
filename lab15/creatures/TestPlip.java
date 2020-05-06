@@ -7,7 +7,6 @@ import huglife.Direction;
 import huglife.Action;
 import huglife.Occupant;
 import huglife.Impassible;
-import huglife.Empty;
 
 /** Tests the plip class   
  *  @authr FIXME
@@ -36,10 +35,17 @@ public class TestPlip {
 
     @Test
     public void testReplicate() {
-
+        Plip p = new Plip(2);
+        Plip newP = p.replicate();
+        assertNotEquals(p, newP);
+        assertEquals(1.00, p.energy(), 0.01);
+        assertEquals(1.00, newP.energy(), 0.01);
+        Plip newP2 = p.replicate();
+        assertEquals(0.50, p.energy(), 0.01);
+        assertEquals(0.50, newP2.energy(), 0.01);
     }
 
-    //@Test
+    @Test
     public void testChoose() {
         Plip p = new Plip(1.2);
         HashMap<Direction, Occupant> surrounded = new HashMap<Direction, Occupant>();

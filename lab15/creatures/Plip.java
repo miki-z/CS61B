@@ -19,18 +19,34 @@ public class Plip extends Creature {
     private int g;
     /** blue color. */
     private int b;
+    /** fraction of energy to lose when moving. */
+    private double movEnergyLoss = 0.15;
+    /** fraction of energy to retain when staying. */
+    private double stayEnergyGained = 0.2;
+    /** fraction of energy to retain when replicating. */
+    private double repEnergyRetained = 0.5;
+    /** fraction of energy to bestow upon offspring. */
+    private double repEnergyGiven = 0.5;
+    /** max energy. */
+    private int maxEnergy = 2;
+    /** minimum energy. */
+    private int minEnergy = 0;
+    /** probability of taking a move when ample space available. */
+    private double moveProbability = 0.5;
+
 
     /** creates plip with energy equal to E. */
     public Plip(double e) {
         super("plip");
-        r = 0;
-        g = 0;
-        b = 0;
+        r = 99;
+        g = (int) (96 * e + 63);
+        b = 76;
         energy = e;
     }
 
     /** creates a plip with energy equal to 1. */
     public Plip() {
+
         this(1);
     }
 
@@ -42,7 +58,6 @@ public class Plip extends Creature {
      *  that you get this exactly correct.
      */
     public Color color() {
-        g = 63;
         return color(r, g, b);
     }
 
@@ -55,11 +70,15 @@ public class Plip extends Creature {
      *  private static final variable. This is not required for this lab.
      */
     public void move() {
+        energy -= movEnergyLoss;
+        energy = Math.max(energy, minEnergy);
     }
 
 
     /** Plips gain 0.2 energy when staying due to photosynthesis. */
     public void stay() {
+        energy += stayEnergyGained;
+        energy = Math.min(energy, maxEnergy);
     }
 
     /** Plips and their offspring each get 50% of the energy, with none
@@ -67,7 +86,9 @@ public class Plip extends Creature {
      *  Plip.
      */
     public Plip replicate() {
-        return this;
+        double babyEnergy = energy * repEnergyGiven;
+        energy = energy * repEnergyRetained;
+        return new Plip(babyEnergy);
     }
 
     /** Plips take exactly the following actions based on NEIGHBORS:
@@ -81,6 +102,20 @@ public class Plip extends Creature {
      *  for an example to follow.
      */
     public Action chooseAction(Map<Direction, Occupant> neighbors) {
+        List<Direction> empties = getNeighborsOfType(neighbors, "empty");
+        if (empties.size() == 0) {
+            return new Action(Action.ActionType.STAY);
+        }
+        Direction moveDir = HugLifeUtils.randomEntry(empties);
+        if (energy >= 1) {
+            return new Action(Action.ActionType.REPLICATE, moveDir);
+        }
+        for (Map.Entry<Direction, Occupant> entry : neighbors.entrySet()) {
+            if (entry.getValue().name().equals("clorus")
+                    && HugLifeUtils.random() < moveProbability) {
+                return new Action(Action.ActionType.MOVE, moveDir);
+            }
+        }
         return new Action(Action.ActionType.STAY);
     }
 
