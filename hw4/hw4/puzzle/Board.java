@@ -106,6 +106,9 @@ public class Board implements WorldState {
             return false;
         }
         Board other = (Board) y;
+        if (other.size() != this.size()) {
+            return false;
+        }
         for (int i = 0; i < size(); i++) {
             for (int j = 0; j < size(); j++) {
                 if (board[i][j] != other.tileAt(i, j)) {
@@ -114,6 +117,17 @@ public class Board implements WorldState {
             }
         }
         return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = 0;
+        for (int i = 0; i < size(); i++) {
+            for (int j = 0; j < size(); j++) {
+                result = 31 * result + board[i][j];
+            }
+        }
+        return result;
     }
 
     /** Returns the string representation of the board.
