@@ -35,6 +35,11 @@ public class MazeBreadthFirstPaths extends MazeExplorer {
         while (!q.isEmpty()) {
             int v = q.removeFirst();
 
+            if (s == t) {
+                distTo[t] = 0;
+                edgeTo[t] = s;
+            }
+
             if (v == t) {
                 targetFound = true;
             }
