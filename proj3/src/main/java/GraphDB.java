@@ -7,6 +7,12 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
+
 
 /**
  * Graph for storing all of the intersection (vertex) and road (edge) information.
@@ -20,7 +26,7 @@ import java.util.ArrayList;
 public class GraphDB {
     /** Your instance variables for storing the graph. You should consider
      * creating helper classes, e.g. Node, Edge, etc. */
-
+    private final Map<Long, Node> graph = new LinkedHashMap<>();
     /**
      * Example constructor shows how to create and start an XML parser.
      * You do not need to modify this constructor, but you're welcome to do so.
@@ -57,7 +63,15 @@ public class GraphDB {
      *  we can reasonably assume this since typically roads are connected.
      */
     private void clean() {
-        // TODO: Your code here.
+        List<Long> nodesToRemove = new ArrayList<>();
+        for (Long nodeID : graph.keySet()) {
+            if (this.graph.get(nodeID).neighbors.isEmpty()) {
+                nodesToRemove.add(nodeID);
+            }
+        }
+        for (Long id : nodesToRemove) {
+            this.graph.remove(id);
+        }
     }
 
     /**
@@ -65,8 +79,7 @@ public class GraphDB {
      * @return An iterable of id's of all vertices in the graph.
      */
     Iterable<Long> vertices() {
-        //YOUR CODE HERE, this currently returns only an empty list.
-        return new ArrayList<Long>();
+        return graph.keySet();
     }
 
     /**
@@ -75,7 +88,12 @@ public class GraphDB {
      * @return An iterable of the ids of the neighbors of v.
      */
     Iterable<Long> adjacent(long v) {
-        return null;
+        Node node = graph.get(v);
+        List<Long> res = new ArrayList<>();
+        for (Node n : node.neighbors) {
+            res.add(n.id);
+        }
+        return res;
     }
 
     /**
@@ -136,7 +154,16 @@ public class GraphDB {
      * @return The id of the node in the graph closest to the target.
      */
     long closest(double lon, double lat) {
-        return 0;
+        double minDistance = Double.MAX_VALUE;
+        Long closestNode = -Long.MAX_VALUE;
+        for (Long nodeID :graph.keySet()) {
+            double distance = distance(lon(nodeID), lat(nodeID), lon, lat);
+            if (distance <= minDistance) {
+                minDistance = distance;
+                closestNode = nodeID;
+            }
+        }
+        return closestNode;
     }
 
     /**
@@ -145,7 +172,7 @@ public class GraphDB {
      * @return The longitude of the vertex.
      */
     double lon(long v) {
-        return 0;
+        return graph.get(v).longitude;
     }
 
     /**
@@ -154,6 +181,63 @@ public class GraphDB {
      * @return The latitude of the vertex.
      */
     double lat(long v) {
-        return 0;
+        return graph.get(v).latitude;
+    }
+
+    /**
+     * A node(vertex)
+     */
+    static class Node {
+        double longitude;
+        double latitude;
+        long id;
+        Set<Node> neighbors;
+        String location;
+        // Map<String, String> extraInfo;
+
+        Node(long id, double longitude, double latitude) {
+            this.id = id;
+            this.longitude = longitude;
+            this.latitude = latitude;
+            this.location = null;
+            this.neighbors = new HashSet<>();
+            //this.extraInfo = new HashMap<>();
+        }
+    }
+
+    /**
+     * A edge(road)
+     */
+    static class Edge {
+        Long v; // one vertex in the edge
+        Long w; // another vertex in the edge
+        String highWayType;
+        String name;
+
+        Edge(String highWayType, String name, Long v, Long w) {
+            this.highWayType = highWayType;
+            this.name = name;
+            this.v = v;
+            this.w = w;
+        }
+    }
+
+    /**
+     * Add a node to the graph.
+     * @param node the node to be added.
+     */
+    void addNode(Node node) {
+        this.graph.put(node.id, node);
+    }
+
+    /**
+     * Adds the edge v-w to this graph (if it is not already an edge).
+     *
+     * @param  v one vertex in the edge
+     * @param  w the other vertex in the edge
+     */
+    void addEdge(long v, long w) {
+        graph.get(v).neighbors.add(graph.get(w));
+        graph.get(w).neighbors.add(graph.get(v));
     }
 }

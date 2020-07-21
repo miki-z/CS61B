@@ -1,3 +1,6 @@
+//import spark.Route;
+// import sun.lwawt.macosx.CSystemTray;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -8,6 +11,10 @@ import java.util.Map;
  * not draw the output correctly.
  */
 public class Rasterer {
+
+    private static final double ROOT_LONDPP = (MapServer.ROOT_LRLON - MapServer.ROOT_ULLON)
+            / MapServer.TILE_SIZE;
+    private static final int MAX_DEPTH = 7;
 
     public Rasterer() {
         // YOUR CODE HERE
@@ -44,9 +51,75 @@ public class Rasterer {
     public Map<String, Object> getMapRaster(Map<String, Double> params) {
         // System.out.println(params);
         Map<String, Object> results = new HashMap<>();
-        System.out.println("Since you haven't implemented getMapRaster, nothing is displayed in "
-                           + "your browser.");
+        boolean querySuccessFlag = true;
+        // Calculate the longitudinal distance per pixel
+        double userLrLon = params.get("lrlon");
+        double userUlLon = params.get("ullon");
+        double userLrLat = params.get("lrlat");
+        double userUlLat = params.get("ullat");
+        double width = params.get("w");
+        double height = params.get("h");
+        double lonDPP = (userLrLon - userUlLon) / width;
+        // Check for valid parameters
+        if ((userLrLat < MapServer.ROOT_LRLAT && userLrLon < MapServer.ROOT_LRLON
+                && userUlLat > MapServer.ROOT_ULLAT && userUlLon > MapServer.ROOT_ULLON)
+                || userUlLon > userLrLon || userLrLat > userUlLat) {
+            querySuccessFlag = false;
+        }
+        // Determine the depth for the query
+        int depth = 0;
+        while (lonDPP < ROOT_LONDPP && depth < MAX_DEPTH) {
+            depth++;
+            lonDPP *= 2;
+        }
+        // Determine the bounding upper left longitude of the rastered image
+        int tilesPerLine = (int) Math.pow(2, depth);
+        double lineTileSize = (MapServer.ROOT_LRLON - MapServer.ROOT_ULLON) / tilesPerLine;
+        double colTileSize = (MapServer.ROOT_LRLAT - MapServer.ROOT_ULLAT) / tilesPerLine;
+        int ulLonIndex = Math.max(0,
+                (int) ((userUlLon - MapServer.ROOT_ULLON) / lineTileSize));
+        int lrLonIndex = Math.min(tilesPerLine - 1,
+                (int) ((userLrLon - MapServer.ROOT_ULLON) / lineTileSize));
+        int ulLatIndex = Math.max(0,
+                (int) ((userUlLat - MapServer.ROOT_ULLAT) / colTileSize));
+        int lrLatIndex = Math.min(tilesPerLine - 1,
+                (int) ((userLrLat - MapServer.ROOT_ULLAT) / colTileSize));
+
+        String[][] rasterGrid = gridRender(ulLonIndex, lrLonIndex, ulLatIndex, lrLatIndex, depth);
+        // System.out.println("Since you haven't implemented getMapRaster, nothing is displayed in "
+        //                   + "your browser.");
+
+        double rasterUlLon = MapServer.ROOT_ULLON + ulLonIndex * lineTileSize;
+        double rasterUlLat = MapServer.ROOT_ULLAT + ulLatIndex * colTileSize;
+        double rasterLrLon = MapServer.ROOT_ULLON + (lrLonIndex + 1) * lineTileSize;
+        double rasterLrLat = MapServer.ROOT_ULLAT + (lrLatIndex + 1) * colTileSize;
+
+        // Push all raster parameters into results
+        results.put("render_grid", rasterGrid);
+        results.put("raster_ul_lon", rasterUlLon);
+        results.put("raster_ul_lat", rasterUlLat);
+        results.put("raster_lr_lon", rasterLrLon);
+        results.put("raster_lr_lat", rasterLrLat);
+        results.put("depth", depth);
+        results.put("query_success", querySuccessFlag);
         return results;
     }
+
+    private String[][] gridRender(int ulLonIndex, int lrLonIndex, int ulLatIndex,
+                                  int lrLatIndex, int depth) {
+        String[][] grid = new String[lrLatIndex - ulLatIndex + 1][lrLonIndex - ulLonIndex + 1];
+        int row = 0;
+        for (int y = ulLatIndex; y <= lrLatIndex; y++) {
+            int col = 0;
+            for (int x = ulLonIndex; x <= lrLonIndex; x++) {
+                grid[row][col] = "d" + depth + "_x" + x + "_y"  + y + ".png";
+                col++;
+            }
+            row++;
+        }
+        return grid;
+    }
+
+
 
 }

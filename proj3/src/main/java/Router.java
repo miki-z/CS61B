@@ -1,5 +1,14 @@
+import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Queue;
+import java.util.Comparator;
+import java.util.Collections;
 import java.util.Objects;
+import java.util.PriorityQueue;
+import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -25,8 +34,70 @@ public class Router {
      */
     public static List<Long> shortestPath(GraphDB g, double stlon, double stlat,
                                           double destlon, double destlat) {
-        return null; // FIXME
+        /* Key: the id of an vertex, Value: best know distance from start location. */
+        Map<Long, Double> bestDistance = new HashMap<>();
+        /* Key: the id of an vertex, Value: the id of the best parent vertex */
+        Map<Long, Long> bestParent = new HashMap<>();
+        Set<Long> marked = new HashSet<>();
+
+        /* Compare two nodes based on their distance to a given start location */
+        class NodeComparator implements Comparator<Long> {
+            @Override
+            public int compare(Long o1, Long o2) {
+                if (bestDistance.get(o1) - bestDistance.get(o2) > 0) {
+                    return 1;
+                } else if (bestDistance.get(o1) - bestDistance.get(o2) < 0) {
+                    return -1;
+                }
+                return 0;
+            }
+        }
+        List<Long> res = new ArrayList<>();
+        Queue<Long> fringe = new PriorityQueue<>(new NodeComparator());
+        Long startNode = g.closest(stlon, stlat);
+        Long desNode = g.closest(destlon, destlat);
+
+        /* Initialize the best distance of all nodes to infinity */
+        for (Long nodeID : g.vertices()) {
+            bestDistance.put(nodeID, Double.POSITIVE_INFINITY);
+        }
+        /* Handle the start node */
+        fringe.add(startNode);
+        bestDistance.put(startNode, 0.0);
+        Long curNode = fringe.poll();
+        marked.add(curNode);
+        /* Walk through edges */
+        while (curNode != null && !curNode.equals(desNode)) {
+            double startToCur = bestDistance.get(curNode);
+            /* Add sources to fringe */
+            for (Long neighbor : g.adjacent(curNode)) {
+                if (!marked.contains(neighbor)) {
+                    double disToParent = g.distance(curNode, neighbor);
+                    double startToNeighbor = startToCur + disToParent;
+                    /* Update the best and fringe */
+                    if (startToNeighbor < bestDistance.get(neighbor)) {
+                        bestDistance.put(neighbor, startToNeighbor);
+                        bestParent.put(neighbor, curNode);
+                        fringe.add(neighbor);
+                    }
+                }
+            }
+            curNode = fringe.poll();
+            marked.add(curNode);
+        }
+
+        /* Generate the shortest path */
+        while (curNode != null && !curNode.equals(startNode)) {
+            res.add(curNode);
+            curNode = bestParent.get(curNode);
+        }
+        res.add(curNode);
+        Collections.reverse(res);
+
+        return res;
     }
+
+
 
     /**
      * Create the list of directions corresponding to a route on the graph.
