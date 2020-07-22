@@ -38,6 +38,7 @@ public class Router {
         Map<Long, Double> bestDistance = new HashMap<>();
         /* Key: the id of an vertex, Value: the id of the best parent vertex */
         Map<Long, Long> bestParent = new HashMap<>();
+        Map<Long, Double> priority = new HashMap<>();
         Set<Long> marked = new HashSet<>();
         long startNode = g.closest(stlon, stlat);
         long desNode = g.closest(destlon, destlat);
@@ -48,7 +49,7 @@ public class Router {
             public int compare(Long o1, Long o2) {
                 double bestEstimate1 = g.distance(o1, desNode) + bestDistance.get(o1);
                 double bestEstimate2 = g.distance(o2, desNode) + bestDistance.get(o2);
-                return Double.compare(bestEstimate1, bestEstimate2);
+                return Double.compare(priority.get(o1), priority.get(o2));
             }
         }
         List<Long> res = new ArrayList<>();
@@ -74,6 +75,7 @@ public class Router {
                     double startToNeighbor = startToCur + disToParent;
                     /* Update the best and fringe */
                     if (startToNeighbor <= bestDistance.get(neighbor)) {
+                        priority.put(neighbor, g.distance(neighbor, desNode) + startToNeighbor);
                         bestDistance.put(neighbor, startToNeighbor);
                         bestParent.put(neighbor, curNode);
                         fringe.add(neighbor);
