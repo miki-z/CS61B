@@ -47,9 +47,14 @@ public class Router {
         class NodeComparator implements Comparator<Long> {
             @Override
             public int compare(Long o1, Long o2) {
-                double bestEstimate1 = g.distance(o1, desNode) + bestDistance.get(o1);
-                double bestEstimate2 = g.distance(o2, desNode) + bestDistance.get(o2);
-                return Double.compare(bestDistance.get(o1), bestDistance.get(o2));
+                //double bestEstimate1 = g.distance(o1, desNode) + bestDistance.get(o1);
+                //double bestEstimate2 = g.distance(o2, desNode) + bestDistance.get(o2);
+                if (bestDistance.get(o1) - bestDistance.get(o2) > 0) {
+                    return 1;
+                } else if (bestDistance.get(o1) - bestDistance.get(o2) < 0) {
+                    return -1;
+                }
+                return 0;
             }
         }
         List<Long> res = new ArrayList<>();
@@ -74,7 +79,7 @@ public class Router {
                     double disToParent = g.distance(curNode, neighbor);
                     double startToNeighbor = startToCur + disToParent;
                     /* Update the best and fringe */
-                    if (startToNeighbor <= bestDistance.get(neighbor)) {
+                    if (startToNeighbor < bestDistance.get(neighbor)) {
                         //priority.put(neighbor, g.distance(neighbor, desNode) + startToNeighbor);
                         bestDistance.put(neighbor, startToNeighbor);
                         bestParent.put(neighbor, curNode);
