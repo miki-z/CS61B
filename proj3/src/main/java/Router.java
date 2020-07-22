@@ -39,14 +39,18 @@ public class Router {
         /* Key: the id of an vertex, Value: the id of the best parent vertex */
         Map<Long, Long> bestParent = new HashMap<>();
         Set<Long> marked = new HashSet<>();
+        long startNode = g.closest(stlon, stlat);
+        long desNode = g.closest(destlon, destlat);
 
-        /* Compare two nodes based on their distance to a given start location */
+        /* Compare two nodes based on their best estimate distance to the destination */
         class NodeComparator implements Comparator<Long> {
             @Override
             public int compare(Long o1, Long o2) {
-                if (bestDistance.get(o1) - bestDistance.get(o2) > 0) {
+                double bestEstimate1 = g.distance(o1, desNode) + bestDistance.get(o1);
+                double bestEstimate2 = g.distance(o2, desNode) + bestDistance.get(o2);
+                if (bestEstimate1 - bestEstimate2 > 0) {
                     return 1;
-                } else if (bestDistance.get(o1) - bestDistance.get(o2) < 0) {
+                } else if (bestEstimate1 - bestEstimate2 < 0) {
                     return -1;
                 }
                 return 0;
@@ -54,8 +58,7 @@ public class Router {
         }
         List<Long> res = new ArrayList<>();
         Queue<Long> fringe = new PriorityQueue<>(new NodeComparator());
-        Long startNode = g.closest(stlon, stlat);
-        Long desNode = g.closest(destlon, destlat);
+
 
         /* Initialize the best distance of all nodes to infinity */
         for (Long nodeID : g.vertices()) {
