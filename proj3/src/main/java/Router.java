@@ -40,6 +40,7 @@ public class Router {
         Map<Long, Long> bestParent = new HashMap<>();
         //Map<Long, Double> priority = new HashMap<>();
         Set<Long> marked = new HashSet<>();
+        Map<Long, Double> h = new HashMap<>();
         long startNode = g.closest(stlon, stlat);
         long desNode = g.closest(destlon, destlat);
 
@@ -47,8 +48,10 @@ public class Router {
         class NodeComparator implements Comparator<Long> {
             @Override
             public int compare(Long o1, Long o2) {
-                double bestEstimate1 = g.distance(o1, desNode) + bestDistance.get(o1);
-                double bestEstimate2 = g.distance(o2, desNode) + bestDistance.get(o2);
+                double bestEstimate1 = h.get(o1);
+                double bestEstimate2 = h.get(o2);
+                //double bestEstimate1 = g.distance(o1, desNode) + bestDistance.get(o1);
+                //double bestEstimate2 = g.distance(o2, desNode) + bestDistance.get(o2);
                 if (bestEstimate1 - bestEstimate2 > 0) {
                     return 1;
                 } else if (bestEstimate1 - bestEstimate2 < 0) {
@@ -64,6 +67,7 @@ public class Router {
         /* Initialize the best distance of all nodes to infinity */
         for (Long nodeID : g.vertices()) {
             bestDistance.put(nodeID, Double.POSITIVE_INFINITY);
+            h.put(nodeID, g.distance(nodeID, desNode));
         }
         /* Handle the start node */
         fringe.add(startNode);
