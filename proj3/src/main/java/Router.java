@@ -48,8 +48,8 @@ public class Router {
         class NodeComparator implements Comparator<Long> {
             @Override
             public int compare(Long o1, Long o2) {
-                double bestEstimate1 = h.get(o1);
-                double bestEstimate2 = h.get(o2);
+                double bestEstimate1 = h.get(o1) + bestDistance.get(o1);
+                double bestEstimate2 = h.get(o2) + bestDistance.get(o2);
                 //double bestEstimate1 = g.distance(o1, desNode) + bestDistance.get(o1);
                 //double bestEstimate2 = g.distance(o2, desNode) + bestDistance.get(o2);
                 if (bestEstimate1 - bestEstimate2 > 0) {
