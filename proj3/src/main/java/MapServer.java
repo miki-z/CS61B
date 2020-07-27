@@ -4,15 +4,15 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 import java.io.IOException;
+import java.util.Map;
+import java.util.Set;
+import java.util.HashMap;
+import java.util.List;
+import java.util.LinkedList;
+import java.util.Base64;
 
 
 /* Maven is used to pull in these dependencies. */
@@ -279,13 +279,20 @@ public class MapServer {
 
     /**
      * In linear time, collect all the names of OSM locations that prefix-match the query string.
-     * @param prefix Prefix string to be searched for. Could be any case, with our without
+     * @param prefix Prefix string to be searched for. Could be any case, with or without
      *               punctuation.
      * @return A <code>List</code> of the full names of locations whose cleaned name matches the
      * cleaned <code>prefix</code>.
      */
     public static List<String> getLocationsByPrefix(String prefix) {
-        return new LinkedList<>();
+        List<String> res = new LinkedList<>();
+        /* Search for prefix */
+        GraphDB.Trie.Child cur = graph.searchPrefix(prefix);
+        if (cur == null) {
+            return res;
+        }
+        graph.helpGetLocation(prefix, res, cur);
+        return res;
     }
 
     /**
@@ -301,7 +308,16 @@ public class MapServer {
      * "id" : Number, The id of the node. <br>
      */
     public static List<Map<String, Object>> getLocations(String locationName) {
-        return new LinkedList<>();
+        List<Map<String, Object>> res = new LinkedList<>();
+        for (GraphDB.Node n : graph.locations(locationName)) {
+            Map<String, Object> params = new HashMap<>();
+            params.put("lat", n.latitude);
+            params.put("lon", n.longitude);
+            params.put("name", n.name);
+            params.put("id", n.id);
+            res.add(params);
+        }
+        return res;
     }
 
     /**

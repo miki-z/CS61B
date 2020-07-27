@@ -38,9 +38,9 @@ public class Router {
         Map<Long, Double> bestDistance = new HashMap<>();
         /* Key: the id of an vertex, Value: the id of the best parent vertex */
         Map<Long, Long> bestParent = new HashMap<>();
-        //Map<Long, Double> priority = new HashMap<>();
         Set<Long> marked = new HashSet<>();
-        Map<Long, Double> h = new HashMap<>();
+        /* Key: the id of an vertex, Value: distance to the destination*/
+        Map<Long, Double> heuristic = new HashMap<>();
         long startNode = g.closest(stlon, stlat);
         long desNode = g.closest(destlon, destlat);
 
@@ -48,13 +48,13 @@ public class Router {
         class NodeComparator implements Comparator<Long> {
             @Override
             public int compare(Long o1, Long o2) {
-                double bestEstimate1 = h.get(o1) + bestDistance.get(o1);
-                double bestEstimate2 = h.get(o2) + bestDistance.get(o2);
-                //double bestEstimate1 = g.distance(o1, desNode) + bestDistance.get(o1);
+                double bestEstimate1 = heuristic.get(o1) + bestDistance.get(o1);
+                double bestEstimate2 = heuristic.get(o2) + bestDistance.get(o2);
+//                double bestEstimate1 = g.distance(o1, desNode) + bestDistance.get(o1);
                 //double bestEstimate2 = g.distance(o2, desNode) + bestDistance.get(o2);
-                if (bestEstimate1 - bestEstimate2 > 0) {
+                if (bestEstimate1 > bestEstimate2) {
                     return 1;
-                } else if (bestEstimate1 - bestEstimate2 < 0) {
+                } else if (bestEstimate1 < bestEstimate2) {
                     return -1;
                 }
                 return 0;
@@ -67,7 +67,7 @@ public class Router {
         /* Initialize the best distance of all nodes to infinity */
         for (Long nodeID : g.vertices()) {
             bestDistance.put(nodeID, Double.POSITIVE_INFINITY);
-            h.put(nodeID, g.distance(nodeID, desNode));
+            heuristic.put(nodeID, g.distance(nodeID, desNode));
         }
         /* Handle the start node */
         fringe.add(startNode);
@@ -102,7 +102,7 @@ public class Router {
         }
         res.add(curNode);
         Collections.reverse(res);
-
+        //System.out.println(g.bearing(35719115, 35719114));
         return res;
     }
 
@@ -117,7 +117,70 @@ public class Router {
      * route.
      */
     public static List<NavigationDirection> routeDirections(GraphDB g, List<Long> route) {
-        return null; // FIXME
+        List<NavigationDirection> res = new ArrayList<>();
+        long cur = route.get(0);
+        long next = route.get(1);
+        long pre = cur;
+        /* Initialize the start node */
+        NavigationDirection nd = new NavigationDirection();
+        nd.direction = NavigationDirection.START;
+        nd.distance = g.distance(cur, next);
+        nd.way = g.ways(cur).get(next);
+        /* Walk through the route */
+        for (int i = 1; i < route.size() - 1; i++) {
+            cur = route.get(i);
+            next = route.get(i + 1);
+            String preWay = nd.way;
+            String curWay = g.ways(cur).get(next);
+            double heading = g.bearing(pre, cur);
+            double bearing = g.bearing(cur, next);
+            double relative = getRelativeBearing(heading, bearing);
+            if (!preWay.equals(curWay)) {
+                res.add(nd);
+                nd = new NavigationDirection();
+                nd.direction = getDirection(relative);
+                nd.way = curWay;
+            }
+            nd.distance += g.distance(cur, next);
+            pre = cur;
+
+        }
+        res.add(nd);
+
+        return res;
+    }
+
+    private static double getRelativeBearing(double heading, double bearing) {
+        // Relative + Heading (in True) = True Bearing
+        // Relative = True Bearing - Heading
+
+        double relativeBearing = (bearing - heading) % 360;
+        if (relativeBearing < -180.0) {
+            relativeBearing += 360.0;
+        }
+        if (relativeBearing >= 180.0) {
+            relativeBearing -= 360.0;
+        }
+
+        return relativeBearing;
+    }
+
+    private static int getDirection(double bearing) {
+        if (bearing >= -15 && bearing <= 15) {
+            return 1;
+        } else if (bearing < 0 && bearing >= -30) {
+            return 2;
+        } else if (bearing <= 30 && bearing > 0) {
+            return 3;
+        } else if (bearing < 0 && bearing >= -100) {
+            return 5;
+        } else if (bearing <= 100 && bearing > 0) {
+            return 4;
+        } else if (bearing < 0) {
+            return 6;
+        } else {
+            return 7;
+        }
     }
 
 

@@ -6,12 +6,13 @@ import java.io.IOException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
+import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.HashMap;
+import java.util.List;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.HashSet;
-import java.util.Set;
 
 
 /**
@@ -27,6 +28,9 @@ public class GraphDB {
     /** Your instance variables for storing the graph. You should consider
      * creating helper classes, e.g. Node, Edge, etc. */
     private final Map<Long, Node> graph = new LinkedHashMap<>();
+    private final Map<String, String> originalNames = new HashMap<>();
+    private final Map<String, Set<Node>> locations = new HashMap<>();
+    private final Trie trie = new Trie();
     /**
      * Example constructor shows how to create and start an XML parser.
      * You do not need to modify this constructor, but you're welcome to do so.
@@ -54,6 +58,7 @@ public class GraphDB {
      * @return Cleaned string.
      */
     static String cleanString(String s) {
+
         return s.replaceAll("[^a-zA-Z ]", "").toLowerCase();
     }
 
@@ -88,12 +93,12 @@ public class GraphDB {
      * @return An iterable of the ids of the neighbors of v.
      */
     Iterable<Long> adjacent(long v) {
-        Node node = graph.get(v);
-        List<Long> res = new ArrayList<>();
-        for (Node n : node.neighbors) {
-            res.add(n.id);
-        }
-        return res;
+//        Node node = graph.get(v);
+//        List<Long> res = new ArrayList<>();
+//        for (Long id: node.neighbors.keySet()) {
+//            res.add(id);
+//        }
+        return this.graph.get(v).neighbors.keySet();
     }
 
     /**
@@ -191,34 +196,16 @@ public class GraphDB {
         double longitude;
         double latitude;
         long id;
-        Set<Node> neighbors;
-        String location;
+        String name;
+        Map<Long, String> neighbors;
         // Map<String, String> extraInfo;
 
         Node(long id, double longitude, double latitude) {
             this.id = id;
             this.longitude = longitude;
             this.latitude = latitude;
-            this.location = null;
-            this.neighbors = new HashSet<>();
+            this.neighbors = new HashMap<>();
             //this.extraInfo = new HashMap<>();
-        }
-    }
-
-    /**
-     * A edge(road)
-     */
-    static class Edge {
-        Long v; // one vertex in the edge
-        Long w; // another vertex in the edge
-        String highWayType;
-        String name;
-
-        Edge(String highWayType, String name, Long v, Long w) {
-            this.highWayType = highWayType;
-            this.name = name;
-            this.v = v;
-            this.w = w;
         }
     }
 
@@ -236,8 +223,93 @@ public class GraphDB {
      * @param  v one vertex in the edge
      * @param  w the other vertex in the edge
      */
-    void addEdge(long v, long w) {
-        graph.get(v).neighbors.add(graph.get(w));
-        graph.get(w).neighbors.add(graph.get(v));
+    void addEdge(long v, long w, String name) {
+        graph.get(v).neighbors.put(w, name);
+        graph.get(w).neighbors.put(v, name);
     }
+
+    Map<Long, String> ways(Long v) {
+        return graph.get(v).neighbors;
+    }
+
+    static class Trie {
+        Child root;
+
+        Trie() {
+            root = new Child();
+        }
+
+        static class Child {
+            boolean isKey;
+            Map<Character, Child> next;
+
+            Child(boolean b) {
+                this.isKey = b;
+                this.next = new HashMap<>();
+            }
+
+            Child() {
+                this(false);
+            }
+
+        }
+
+        void add(String name) {
+            Child cur = root;
+            for (int i = 0; i < name.length(); i++) {
+                char c = name.charAt(i);
+                if (cur.next.get(c) == null) {
+                    cur.next.put(c, new Child());
+                }
+                cur = cur.next.get(c);
+            }
+
+            if (!cur.isKey) {
+                cur.isKey = true;
+            }
+        }
+
+
+    }
+
+    void addLocation(String location, Node node) {
+        node.name = location;
+        String cleanedName = cleanString(location);
+        this.trie.add(cleanedName);
+        Set<Node> nodes = this.locations.get(cleanedName);
+        if (nodes == null) {
+            nodes = new HashSet<>();
+        }
+        nodes.add(node);
+        this.locations.put(cleanedName, nodes);
+        this.originalNames.put(cleanedName, location);
+    }
+
+    Trie.Child searchPrefix(String prefix) {
+        GraphDB.Trie.Child cur = this.trie.root;
+        for (int i = 0; i < prefix.length(); i++) {
+            char c = prefix.charAt(i);
+            if (cur.next.get(c) == null) {
+                return null;
+            }
+            cur = cur.next.get(c);
+        }
+        return cur;
+    }
+
+    void helpGetLocation(String s, List<String> res, Trie.Child c) {
+        if (c.isKey) {
+            res.add(this.originalNames.get(s));
+        }
+        for (char ch : c.next.keySet()) {
+            helpGetLocation(s + c, res, c.next.get(ch));
+        }
+
+
+    }
+
+    Iterable<Node> locations(String name) {
+        return locations.get(cleanString(name));
+    }
+
 }

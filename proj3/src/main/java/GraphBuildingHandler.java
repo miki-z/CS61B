@@ -44,6 +44,7 @@ public class GraphBuildingHandler extends DefaultHandler {
     private List<Long> possibleWay = new ArrayList<>();
     private boolean isValidWay = false;
     private GraphDB.Node curNode;
+    private String currentWay = null;
 
     /**
      * Create a new GraphBuildingHandler.
@@ -110,10 +111,11 @@ public class GraphBuildingHandler extends DefaultHandler {
                 //System.out.println("Highway type: " + v);
                 /* Hint: Setting a "flag" is good enough! */
                 isValidWay = ALLOWED_HIGHWAY_TYPES.contains(v);
-            } // else if (k.equals("name")) {
+            } else if (k.equals("name")) {
                 //System.out.println("Way Name: " + v);
+                currentWay = attributes.getValue("v");
 
-            // }
+            }
 //            System.out.println("Tag with k=" + k + ", v=" + v + ".");
         } else if (activeState.equals("node") && qName.equals("tag") && attributes.getValue("k")
                 .equals("name")) {
@@ -123,7 +125,7 @@ public class GraphBuildingHandler extends DefaultHandler {
             node this tag belongs to. Remember XML is parsed top-to-bottom, so probably it's the
             last node that you looked at (check the first if-case). */
 //            System.out.println("Node's name: " + attributes.getValue("v"));
-            curNode.location = attributes.getValue("v");
+            g.addLocation(attributes.getValue("v"), curNode);
         }
     }
 
@@ -147,12 +149,13 @@ public class GraphBuildingHandler extends DefaultHandler {
             //System.out.println("Finishing a way...");
             if (isValidWay) {
                 for (int i = 0; i < possibleWay.size() - 1; i++) {
-                    g.addEdge(possibleWay.get(i), possibleWay.get(i + 1));
+                    g.addEdge(possibleWay.get(i), possibleWay.get(i + 1), currentWay);
                 }
             }
             /* This way is cleared */
             possibleWay.clear();
             isValidWay = false;
+            currentWay = "";
         }
     }
 
