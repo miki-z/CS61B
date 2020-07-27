@@ -303,10 +303,8 @@ public class GraphDB {
             res.add(this.originalNames.get(s));
         }
         for (char ch : c.next.keySet()) {
-            helpGetLocation(s + c, res, c.next.get(ch));
+            helpGetLocation(s + ch, res, c.next.get(ch));
         }
-
-
     }
 
     List<String> getLocationsByPrefix(String prefix) {

@@ -2,6 +2,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.HashSet;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 
@@ -141,5 +144,13 @@ public class TestGraphBuilding {
             N += 1;
         }
         return N;
+    }
+
+    @Test
+    public void testAutocomplete() {
+        Stream<String> s = Stream.of("Wolfgang Boeck", "DDS", "Wolfhound Bar", "Wooden Bench", "Woolly Mammoth");
+        List<String> expect = s.collect(Collectors.toList());
+        List<String> actual = graph.getLocationsByPrefix("wo");
+        assertEquals(expect, actual);
     }
 }
