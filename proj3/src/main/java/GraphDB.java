@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 
 
 /**
@@ -308,7 +309,18 @@ public class GraphDB {
 
     }
 
-    Iterable<Node> locations(String name) {
+    List<String> getLocationsByPrefix(String prefix) {
+        List<String> res = new LinkedList<>();
+        /* Search for prefix */
+        Trie.Child cur = this.searchPrefix(prefix);
+        if (cur == null) {
+            return res;
+        }
+        this.helpGetLocation(prefix, res, cur);
+        return res;
+    }
+
+    Iterable<Node> getLocations(String name) {
         return locations.get(cleanString(name));
     }
 

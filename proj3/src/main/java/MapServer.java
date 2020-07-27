@@ -285,14 +285,7 @@ public class MapServer {
      * cleaned <code>prefix</code>.
      */
     public static List<String> getLocationsByPrefix(String prefix) {
-        List<String> res = new LinkedList<>();
-        /* Search for prefix */
-        GraphDB.Trie.Child cur = graph.searchPrefix(prefix);
-        if (cur == null) {
-            return res;
-        }
-        graph.helpGetLocation(prefix, res, cur);
-        return res;
+        return graph.getLocationsByPrefix(prefix);
     }
 
     /**
@@ -309,7 +302,7 @@ public class MapServer {
      */
     public static List<Map<String, Object>> getLocations(String locationName) {
         List<Map<String, Object>> res = new LinkedList<>();
-        for (GraphDB.Node n : graph.locations(locationName)) {
+        for (GraphDB.Node n : graph.getLocations(locationName)) {
             Map<String, Object> params = new HashMap<>();
             params.put("lat", n.latitude);
             params.put("lon", n.longitude);
